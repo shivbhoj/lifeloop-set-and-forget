@@ -174,7 +174,7 @@ function OnboardingScreen({ palette, onStart }) {
 function HomeScreen({ palette, tasks, onOpenTask, onAdd, peacefulDays, setTab }) {
   const soon = tasks.filter(t => t.daysUntil <= 14).sort((a, b) => a.daysUntil - b.daysUntil);
   const later = tasks.filter(t => t.daysUntil > 14 && t.daysUntil <= 60).sort((a, b) => a.daysUntil - b.daysUntil);
-  const resting = tasks.filter(t => t.daysUntil > 60);
+  const resting = tasks.filter(t => t.daysUntil > 60).sort((a, b) => a.daysUntil - b.daysUntil);
 
   const today = soon.filter(t => t.daysUntil <= 0);
   const thisWeek = soon.filter(t => t.daysUntil > 0);
@@ -248,8 +248,8 @@ function HomeScreen({ palette, tasks, onOpenTask, onAdd, peacefulDays, setTab })
             fontFamily: 'JetBrains Mono, monospace', color: palette.muted, letterSpacing: 0.3, lineHeight: 1.7,
           }}>
             {resting.length} tasks tucked away. Next to surface: <span style={{ color: palette.ink }}>
-              {resting.sort((a,b) => a.daysUntil - b.daysUntil)[0]?.name}
-            </span> on {fmtDate(resting.sort((a,b) => a.daysUntil - b.daysUntil)[0]?.nextDue)}.
+              {resting[0]?.name}
+            </span> on {fmtDate(resting[0]?.nextDue)}.
           </div>
         </Section>
       </div>
