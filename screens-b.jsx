@@ -5,6 +5,83 @@ const { Phone, Ring, CatDot, Icon, CATEGORIES, TODAY, fmtDate, fmtLong, cycleDay
 // ─────────────────────────────────────────────────────────────
 // TASK DETAIL
 // ─────────────────────────────────────────────────────────────
+function TaskLoopViz({ palette, task, progress, ringColor, due, isOverdue }) {
+  return (
+    <div style={{
+      marginTop: 28, padding: '24px 16px', borderRadius: 16,
+      background: palette.surface,
+      display: 'flex', alignItems: 'center', gap: 20,
+    }}>
+      <Ring progress={progress} size={88} stroke={3}
+        color={ringColor}
+        track={palette.ink} trackOpacity={0.1}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontFamily: '"Instrument Serif", serif', fontSize: 22, color: palette.ink, lineHeight: 1,
+          }}>{Math.abs(due)}</div>
+          <div style={{
+            fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: palette.muted, letterSpacing: 1, marginTop: 2,
+          }}>{isOverdue ? 'OVER' : 'DAYS'}</div>
+        </div>
+      </Ring>
+      <div style={{ flex: 1, fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ fontSize: 11, color: palette.muted, fontFamily: 'JetBrains Mono, monospace', letterSpacing: 1 }}>NEXT DUE</div>
+        <div style={{ fontSize: 17, color: palette.ink, marginTop: 2, fontWeight: 500 }}>{fmtLong(task.nextDue)}</div>
+        <div style={{ height: 12 }}/>
+        <div style={{ fontSize: 11, color: palette.muted, fontFamily: 'JetBrains Mono, monospace', letterSpacing: 1 }}>LAST DONE</div>
+        <div style={{ fontSize: 13, color: palette.inkSoft, marginTop: 2 }}>{fmtLong(task.lastDone)}</div>
+      </div>
+    </div>
+  );
+}
+
+function TaskAttachments({ palette, attachments }) {
+  if (!attachments || attachments.length === 0) return null;
+
+  return (
+    <>
+      <SectionLabel palette={palette}>ATTACHED · {attachments.length}</SectionLabel>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {attachments.map((a, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 14px', border: `1px solid ${palette.hair}`, borderRadius: 10,
+            background: palette.bg,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: palette.surface, color: palette.inkSoft,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundImage: a.kind === 'img' ? `repeating-linear-gradient(135deg, transparent 0, transparent 6px, ${palette.hair} 6px, ${palette.hair} 7px)` : 'none',
+            }}>
+              {a.kind === 'img' ? Icon.image(16) : Icon.doc(16)}
+            </div>
+            <div style={{ flex: 1, fontFamily: 'Inter, sans-serif', fontSize: 13, color: palette.ink }}>
+              {a.label}
+            </div>
+            <span style={{
+              fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: palette.muted,
+            }}>{a.kind.toUpperCase()}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function TaskNote({ palette, note }) {
+  if (!note) return null;
+  return (
+    <>
+      <SectionLabel palette={palette}>CONTEXT</SectionLabel>
+      <div style={{
+        fontFamily: '"Instrument Serif", serif', fontSize: 18, lineHeight: 1.5,
+        color: palette.ink, letterSpacing: 0.1,
+      }}>{note}</div>
+    </>
+  );
+}
+
 function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
   const totalCycle = cycleDays(task.cycleMonths);
   const daysInto = totalCycle - task.daysUntil;
@@ -47,73 +124,20 @@ function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
         }}>{task.name}</h1>
 
         {/* Loop visualization */}
-        <div style={{
-          marginTop: 28, padding: '24px 16px', borderRadius: 16,
-          background: palette.surface,
-          display: 'flex', alignItems: 'center', gap: 20,
-        }}>
-          <Ring progress={progress} size={88} stroke={3}
-            color={ringColor}
-            track={palette.ink} trackOpacity={0.1}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{
-                fontFamily: '"Instrument Serif", serif', fontSize: 22, color: palette.ink, lineHeight: 1,
-              }}>{Math.abs(due)}</div>
-              <div style={{
-                fontFamily: 'JetBrains Mono, monospace', fontSize: 8, color: palette.muted, letterSpacing: 1, marginTop: 2,
-              }}>{isOverdue ? 'OVER' : 'DAYS'}</div>
-            </div>
-          </Ring>
-          <div style={{ flex: 1, fontFamily: 'Inter, sans-serif' }}>
-            <div style={{ fontSize: 11, color: palette.muted, fontFamily: 'JetBrains Mono, monospace', letterSpacing: 1 }}>NEXT DUE</div>
-            <div style={{ fontSize: 17, color: palette.ink, marginTop: 2, fontWeight: 500 }}>{fmtLong(task.nextDue)}</div>
-            <div style={{ height: 12 }}/>
-            <div style={{ fontSize: 11, color: palette.muted, fontFamily: 'JetBrains Mono, monospace', letterSpacing: 1 }}>LAST DONE</div>
-            <div style={{ fontSize: 13, color: palette.inkSoft, marginTop: 2 }}>{fmtLong(task.lastDone)}</div>
-          </div>
-        </div>
+        <TaskLoopViz
+          palette={palette}
+          task={task}
+          progress={progress}
+          ringColor={ringColor}
+          due={due}
+          isOverdue={isOverdue}
+        />
 
         {/* Note */}
-        {task.note && (
-          <>
-            <SectionLabel palette={palette}>CONTEXT</SectionLabel>
-            <div style={{
-              fontFamily: '"Instrument Serif", serif', fontSize: 18, lineHeight: 1.5,
-              color: palette.ink, letterSpacing: 0.1,
-            }}>{task.note}</div>
-          </>
-        )}
+        <TaskNote palette={palette} note={task.note} />
 
         {/* Attachments */}
-        {task.attachments?.length > 0 && (
-          <>
-            <SectionLabel palette={palette}>ATTACHED · {task.attachments.length}</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {task.attachments.map((a, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '12px 14px', border: `1px solid ${palette.hair}`, borderRadius: 10,
-                  background: palette.bg,
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    background: palette.surface, color: palette.inkSoft,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundImage: a.kind === 'img' ? `repeating-linear-gradient(135deg, transparent 0, transparent 6px, ${palette.hair} 6px, ${palette.hair} 7px)` : 'none',
-                  }}>
-                    {a.kind === 'img' ? Icon.image(16) : Icon.doc(16)}
-                  </div>
-                  <div style={{ flex: 1, fontFamily: 'Inter, sans-serif', fontSize: 13, color: palette.ink }}>
-                    {a.label}
-                  </div>
-                  <span style={{
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: palette.muted,
-                  }}>{a.kind.toUpperCase()}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        <TaskAttachments palette={palette} attachments={task.attachments} />
 
         {/* Cycle history */}
         <SectionLabel palette={palette}>THE LOOP</SectionLabel>
