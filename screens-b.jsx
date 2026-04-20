@@ -277,7 +277,7 @@ function AddScreen({ palette, onCancel, onSave }) {
                 color: lastDone === d ? palette.bg : palette.ink,
                 border: `1px solid ${lastDone === d ? palette.ink : palette.hair}`,
                 fontFamily: 'JetBrains Mono, monospace', fontSize: 12, cursor: 'pointer',
-              }}>{d === 0 ? 'Today' : d < 30 ? `${d}d ago` : d < 365 ? `${Math.round(d/30)}mo` : `${Math.round(d/365)}yr ago`}</button>
+              }}>{formatLastDoneDays(d)}</button>
             ))}
           </div>
         </Field>

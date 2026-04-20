@@ -63,3 +63,24 @@ test('cycleDays handles non-numeric types', (t) => {
   assert.ok(Number.isNaN(cycleDays(undefined)));
   assert.strictEqual(cycleDays(null), 0); // null coerces to 0 in math operations
 });
+
+const { formatLastDoneDays } = require('./data.jsx');
+
+test('formatLastDoneDays handles specific array values', (t) => {
+  assert.strictEqual(formatLastDoneDays(0), 'Today');
+  assert.strictEqual(formatLastDoneDays(7), '7d ago');
+  assert.strictEqual(formatLastDoneDays(30), '1mo');
+  assert.strictEqual(formatLastDoneDays(90), '3mo');
+  assert.strictEqual(formatLastDoneDays(180), '6mo');
+  assert.strictEqual(formatLastDoneDays(365), '1yr ago');
+});
+
+test('formatLastDoneDays handles boundary and arbitrary values', (t) => {
+  assert.strictEqual(formatLastDoneDays(1), '1d ago');
+  assert.strictEqual(formatLastDoneDays(29), '29d ago');
+  assert.strictEqual(formatLastDoneDays(31), '1mo');
+  assert.strictEqual(formatLastDoneDays(45), '2mo');
+  assert.strictEqual(formatLastDoneDays(364), '12mo');
+  assert.strictEqual(formatLastDoneDays(366), '1yr ago');
+  assert.strictEqual(formatLastDoneDays(700), '2yr ago');
+});

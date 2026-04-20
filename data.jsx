@@ -18,6 +18,14 @@ const fmtLong = (d) => d.toLocaleDateString('en-US', { weekday: 'long', month: '
 // cycle months -> days
 const cycleDays = (months) => Math.round(months * 30.44);
 
+const formatLastDoneDays = (d) => {
+  if (d === 0) return 'Today';
+  if (d < 30) return `${d}d ago`;
+  if (d < 365) return `${Math.round(d / 30)}mo`;
+  return `${Math.round(d / 365)}yr ago`;
+};
+
+
 const mkTask = (id, name, category, cycleMonths, lastDoneOffset, opts = {}) => {
   const lastDone = addDays(TODAY, -lastDoneOffset);
   const nextDue = addDays(lastDone, cycleDays(cycleMonths));
@@ -108,13 +116,13 @@ const TEMPLATES = [
 if (typeof window !== 'undefined') {
   Object.assign(window, {
     CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-    daysBetween, addDays, fmtDate, fmtLong, cycleDays,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays, formatLastDoneDays,
   });
 }
 
 if (typeof module !== 'undefined') {
   module.exports = {
     CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-    daysBetween, addDays, fmtDate, fmtLong, cycleDays,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays, formatLastDoneDays,
   };
 }
