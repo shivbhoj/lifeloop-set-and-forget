@@ -580,8 +580,9 @@ function StatsScreen({ palette, tasks, completedCount, peacefulDays }) {
           color: palette.muted, marginBottom: 14,
         }}>COMPLETIONS BY MONTH</div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
-          {completedByMonth.map((v, i) => {
+          {(() => {
             const max = Math.max(...completedByMonth);
+            return completedByMonth.map((v, i) => {
             const h = (v / max) * 100;
             const isCurrent = i === 3; // April
             return (
@@ -599,7 +600,8 @@ function StatsScreen({ palette, tasks, completedCount, peacefulDays }) {
                 }}>{months[i][0]}</div>
               </div>
             );
-          })}
+          });
+          })()}
         </div>
       </div>
 
