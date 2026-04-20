@@ -52,7 +52,10 @@ function TaskRow({ task, onClick, palette, showCategory = true, dense = false })
   else if (due <= 14) dueLabel = `In ${due} days`;
   else dueLabel = fmtDate(task.nextDue);
 
-  const ringColor = isOverdue ? 'oklch(0.55 0.12 30)' : (isSoon ? CATEGORIES[task.category].dot : palette.inkSoft);
+  let ringColor;
+  if (isOverdue) ringColor = 'oklch(0.55 0.12 30)';
+  else if (isSoon) ringColor = CATEGORIES[task.category].dot;
+  else ringColor = palette.inkSoft;
 
   return (
     <button onClick={onClick} style={{
