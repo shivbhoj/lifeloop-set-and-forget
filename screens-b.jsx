@@ -542,7 +542,10 @@ function StatsScreen({ palette, tasks, completedCount, peacefulDays }) {
   const completedByMonth = [2, 3, 1, 2, 4, 2, 3, 5, 3, 4, 2, 3];
 
   const catCount = {};
-  Object.keys(CATEGORIES).forEach(k => { catCount[k] = tasks.filter(t => t.category === k).length; });
+  Object.keys(CATEGORIES).forEach(k => { catCount[k] = 0; });
+  tasks.forEach(t => {
+    if (t.category in catCount) catCount[t.category]++;
+  });
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: palette.bg, overflowY: 'auto' }}>
