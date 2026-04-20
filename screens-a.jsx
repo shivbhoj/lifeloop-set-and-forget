@@ -303,14 +303,24 @@ function Empty({ palette, text }) {
 function VaultScreen({ palette, tasks, onOpenTask, onAdd }) {
   const [filter, setFilter] = React.useState('all');
 
-  const byCat = {};
-  Object.keys(CATEGORIES).forEach(k => { byCat[k] = []; });
-  tasks.forEach(t => {
-    if (t.category in byCat) byCat[t.category].push(t);
-  });
+  const grouped = React.useMemo(() => {
+    const byCat = {};
+    if (filter !== 'all') {
+      byCat[filter] = [];
+      for (let i = 0; i < tasks.length; i++) {
+        const t = tasks[i];
+        if (t.category === filter) byCat[filter].push(t);
+      }
+      return byCat;
+    }
 
-  const filtered = filter === 'all' ? tasks : tasks.filter(t => t.category === filter);
-  const grouped = filter === 'all' ? byCat : { [filter]: filtered };
+    Object.keys(CATEGORIES).forEach(k => { byCat[k] = []; });
+    for (let i = 0; i < tasks.length; i++) {
+      const t = tasks[i];
+      if (t.category in byCat) byCat[t.category].push(t);
+    }
+    return byCat;
+  }, [tasks, filter]);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: palette.bg }}>
