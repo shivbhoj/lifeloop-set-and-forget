@@ -37,10 +37,11 @@ function BottomNav({ tab, setTab, palette }) {
 // ─────────────────────────────────────────────────────────────
 // Task row — used on Home and in Vault
 // ─────────────────────────────────────────────────────────────
-function TaskRow({ task, onClick, palette, showCategory = true, dense = false }) {
-  const totalCycle = cycleDays(task.cycleMonths);
+
+function getTaskRowDisplayInfo(task, palette, categories, cycleDaysFn, fmtDateFn) {
+  const totalCycle = cycleDaysFn(task.cycleMonths);
   const daysInto = totalCycle - task.daysUntil;
-  const progress = Math.min(1, Math.max(0, daysInto / totalCycle));
+  const progress = totalCycle === 0 ? 0 : Math.min(1, Math.max(0, daysInto / totalCycle));
   const due = task.daysUntil;
   const isOverdue = due < 0;
   const isSoon = due >= 0 && due <= 14;
@@ -50,9 +51,15 @@ function TaskRow({ task, onClick, palette, showCategory = true, dense = false })
   else if (due === 0) dueLabel = 'Due today';
   else if (due === 1) dueLabel = 'Tomorrow';
   else if (due <= 14) dueLabel = `In ${due} days`;
-  else dueLabel = fmtDate(task.nextDue);
+  else dueLabel = fmtDateFn(task.nextDue);
 
-  const ringColor = isOverdue ? 'oklch(0.55 0.12 30)' : (isSoon ? CATEGORIES[task.category].dot : palette.inkSoft);
+  const ringColor = isOverdue ? 'oklch(0.55 0.12 30)' : (isSoon ? categories[task.category].dot : palette.inkSoft);
+
+  return { totalCycle, daysInto, progress, due, isOverdue, isSoon, dueLabel, ringColor };
+}
+
+function TaskRow({ task, onClick, palette, showCategory = true, dense = false }) {
+  const { progress, isOverdue, dueLabel, ringColor } = getTaskRowDisplayInfo(task, palette, CATEGORIES, cycleDays, fmtDate);
 
   return (
     <button onClick={onClick} style={{
@@ -402,4 +409,8 @@ function Chip({ active, onClick, children, palette }) {
   );
 }
 
-Object.assign(window, { HomeScreen, VaultScreen, OnboardingScreen, BottomNav, TaskRow });
+Object.assign(window, { HomeScreen, VaultScreen, OnboardingScreen, BottomNav, TaskRow, getTaskRowDisplayInfo });
+
+if (typeof module !== 'undefined') {
+  module.exports = { getTaskRowDisplayInfo };
+}
