@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { fmtDate, fmtLong } = require('./data.jsx');
+const { fmtDate, fmtLong, cycleDays } = require('./data.jsx');
 
 test('fmtDate formats date correctly', (t) => {
   // Today = April 19, 2026
@@ -36,4 +36,30 @@ test('fmtLong formats date correctly with weekday and long month', (t) => {
   // Leap Day 2024 (Thursday)
   const leapDay = new Date(2024, 1, 29);
   assert.strictEqual(fmtLong(leapDay), 'Thursday, February 29');
+});
+
+test('cycleDays calculates days correctly for integers', (t) => {
+  assert.strictEqual(cycleDays(1), 30);
+  assert.strictEqual(cycleDays(6), 183);
+  assert.strictEqual(cycleDays(12), 365);
+});
+
+test('cycleDays handles zero', (t) => {
+  assert.strictEqual(cycleDays(0), 0);
+});
+
+test('cycleDays handles negative values', (t) => {
+  assert.strictEqual(cycleDays(-1), -30);
+  assert.strictEqual(cycleDays(-6), -183);
+});
+
+test('cycleDays handles very large numbers', (t) => {
+  assert.strictEqual(cycleDays(1000), 30440);
+  assert.strictEqual(cycleDays(10000), 304400);
+});
+
+test('cycleDays handles non-numeric types', (t) => {
+  assert.ok(Number.isNaN(cycleDays(NaN)));
+  assert.ok(Number.isNaN(cycleDays(undefined)));
+  assert.strictEqual(cycleDays(null), 0); // null coerces to 0 in math operations
 });
