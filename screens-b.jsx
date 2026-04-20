@@ -13,6 +13,13 @@ function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
   const isOverdue = due < 0;
   const isLaunchDay = due <= 0;
 
+  let ringColor = palette.accentSage;
+  if (isOverdue) {
+    ringColor = 'oklch(0.55 0.12 30)';
+  } else if (isLaunchDay) {
+    ringColor = palette.accent;
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: palette.bg }}>
       <div style={{ padding: '16px 12px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -46,7 +53,7 @@ function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
           display: 'flex', alignItems: 'center', gap: 20,
         }}>
           <Ring progress={progress} size={88} stroke={3}
-            color={isOverdue ? 'oklch(0.55 0.12 30)' : (isLaunchDay ? palette.accent : palette.accentSage)}
+            color={ringColor}
             track={palette.ink} trackOpacity={0.1}>
             <div style={{ textAlign: 'center' }}>
               <div style={{
