@@ -136,31 +136,6 @@ function AndroidNavBar({ dark = false }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Device frame — wraps everything
-// ─────────────────────────────────────────────────────────────
-function AndroidDevice({
-  children, width = 412, height = 892, dark = false,
-  title, large = false, keyboard = false,
-}) {
-  return (
-    <div style={{
-      width, height, borderRadius: 18, overflow: 'hidden',
-      background: dark ? '#1d1b20' : MD_C.surface,
-      border: `8px solid ${MD_C.frameBorder}`,
-      boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
-      display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
-    }}>
-      <AndroidStatusBar dark={dark} />
-      {title !== undefined && <AndroidAppBar title={title} large={large} />}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {children}
-      </div>
-      {keyboard && <AndroidKeyboard />}
-      <AndroidNavBar dark={dark} />
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────
 // Keyboard — Gboard (Material 3)
 // ─────────────────────────────────────────────────────────────
@@ -210,5 +185,5 @@ function AndroidKeyboard() {
 }
 
 Object.assign(window, {
-  AndroidDevice, AndroidStatusBar, AndroidAppBar, AndroidListItem, AndroidNavBar, AndroidKeyboard,
+  AndroidStatusBar, AndroidAppBar, AndroidListItem, AndroidNavBar, AndroidKeyboard,
 });
