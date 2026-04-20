@@ -105,7 +105,16 @@ const TEMPLATES = [
   },
 ];
 
-Object.assign(window, {
-  CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-  daysBetween, addDays, fmtDate, fmtLong, cycleDays,
-});
+if (typeof window !== 'undefined') {
+  Object.assign(window, {
+    CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays,
+  });
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays,
+  };
+}
