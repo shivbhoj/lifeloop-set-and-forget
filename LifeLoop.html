@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>LifeLoop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin: 0; padding: 0; min-height: 100%; background: oklch(0.93 0.008 75); }
+  * { box-sizing: border-box; }
+  button:focus-visible { outline: 2px solid oklch(0.5 0.05 60); outline-offset: 2px; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="lib/data.jsx"></script>
+<script type="text/babel" src="lib/chrome.jsx"></script>
+<script type="text/babel" src="lib/screens-a.jsx"></script>
+<script type="text/babel" src="lib/screens-b.jsx"></script>
+
+<script type="text/babel">
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "palette": "bone",
+  "celebration": "confetti",
+  "density": "compact",
+  "categoryStyle": "dot"
+}/*EDITMODE-END*/;
+
+const PALETTES = {
+  bone: {
+    name: 'Bone',
+    bg: 'oklch(0.97 0.008 75)',
+    surface: 'oklch(0.94 0.012 75)',
+    ink: 'oklch(0.22 0.01 60)',
+    inkSoft: 'oklch(0.40 0.01 60)',
+    muted: 'oklch(0.55 0.008 60)',
+    hair: 'oklch(0.85 0.008 70)',
+    hairSoft: 'oklch(0.90 0.008 70)',
+    accent: 'oklch(0.55 0.10 45)',
+    accentSage: 'oklch(0.62 0.06 155)',
+    fg: 'oklch(0.22 0.01 60)',
+    frame: 'oklch(0.30 0.008 60)',
+    pageBg: 'oklch(0.93 0.008 75)',
+  },
+  slate: {
+    name: 'Slate',
+    bg: 'oklch(0.96 0.004 240)',
+    surface: 'oklch(0.93 0.006 240)',
+    ink: 'oklch(0.24 0.01 250)',
+    inkSoft: 'oklch(0.42 0.01 250)',
+    muted: 'oklch(0.55 0.008 250)',
+    hair: 'oklch(0.85 0.006 250)',
+    hairSoft: 'oklch(0.90 0.006 250)',
+    accent: 'oklch(0.55 0.10 260)',
+    accentSage: 'oklch(0.58 0.07 200)',
+    fg: 'oklch(0.24 0.01 250)',
+    frame: 'oklch(0.30 0.008 250)',
+    pageBg: 'oklch(0.92 0.006 240)',
+  },
+  sage: {
+    name: 'Sage',
+    bg: 'oklch(0.96 0.010 150)',
+    surface: 'oklch(0.93 0.014 150)',
+    ink: 'oklch(0.22 0.01 150)',
+    inkSoft: 'oklch(0.40 0.015 150)',
+    muted: 'oklch(0.55 0.012 150)',
+    hair: 'oklch(0.85 0.012 150)',
+    hairSoft: 'oklch(0.90 0.010 150)',
+    accent: 'oklch(0.55 0.10 30)',
+    accentSage: 'oklch(0.50 0.09 160)',
+    fg: 'oklch(0.22 0.01 150)',
+    frame: 'oklch(0.30 0.01 150)',
+    pageBg: 'oklch(0.92 0.012 150)',
+  },
+};
+
+const { Phone, HomeScreen, VaultScreen, OnboardingScreen, BottomNav, TaskDetail, AddScreen, Celebration, NotificationOverlay, StatsScreen, TemplatesScreen, UpgradeScreen, SEED_TASKS, TEMPLATES, TODAY, cycleDays, addDays } = window;
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAKS);
+  const palette = PALETTES[tweaks.palette] || PALETTES.bone;
+
+  const [tasks, setTasks] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('ll_tasks');
+      if (saved) return JSON.parse(saved).map(t => ({
+        ...t,
+        lastDone: new Date(t.lastDone),
+        nextDue: new Date(t.nextDue),
+      }));
+    } catch (e) {}
+    return SEED_TASKS;
+  });
+
+  // Keep derived `daysUntil` fresh
+  React.useEffect(() => {
+    setTasks(prev => prev.map(t => ({
+      ...t,
+      daysUntil: Math.round((t.nextDue - TODAY) / 86400000),
+    })));
+  }, []);
+
+  const persist = (next) => {
+    setTasks(next);
+    try { localStorage.setItem('ll_tasks', JSON.stringify(next)); } catch (e) {}
+  };
+
+  // Navigation
+  const [screen, setScreen] = React.useState(() => {
+    return localStorage.getItem('ll_screen') || 'home';
+  });
+  const [tab, setTab] = React.useState('home');
+  const [activeTaskId, setActiveTaskId] = React.useState('t1');
+  const [notifVariant, setNotifVariant] = React.useState(null); // 'prenudge' | 'launch'
+  const [notifTaskId, setNotifTaskId] = React.useState('t1');
+
+  const go = (s) => { setScreen(s); try { localStorage.setItem('ll_screen', s); } catch(e){} };
+  const activeTask = tasks.find(t => t.id === activeTaskId) || tasks[0];
+  const notifTask = tasks.find(t => t.id === notifTaskId) || tasks[0];
+
+  const [completedCount, setCompletedCount] = React.useState(32);
+  const peacefulDays = 168;
+
+  const onOpenTask = (id) => { setActiveTaskId(id); go('detail'); };
+  const onComplete = () => {
+    // Reset the clock
+    const next = tasks.map(t => {
+      if (t.id !== activeTaskId) return t;
+      const lastDone = new Date(TODAY);
+      const nextDue = addDays(lastDone, cycleDays(t.cycleMonths));
+      return { ...t, lastDone, nextDue, daysUntil: Math.round((nextDue - TODAY) / 86400000) };
+    });
+    persist(next);
+    setCompletedCount(c => c + 1);
+    go('celebration');
+  };
+  const onAddSave = ({ name, category, cycle, lastDone, note }) => {
+    const ld = addDays(TODAY, -lastDone);
+    const nd = addDays(ld, cycleDays(cycle));
+    const newTask = {
+      id: 't' + Date.now(),
+      name, category,
+      cycleMonths: cycle,
+      lastDone: ld, nextDue: nd,
+      daysUntil: Math.round((nd - TODAY) / 86400000),
+      note, attachments: [],
+    };
+    persist([...tasks, newTask]);
+    go('home');
+  };
+  const resetSeed = () => { persist(SEED_TASKS); go('onboarding'); };
+
+  // Tweaks mode
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+  const updateTweak = (k, v) => {
+    const next = { ...tweaks, [k]: v };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+  };
+
+  // Page background reflects palette
+  React.useEffect(() => {
+    document.body.style.background = palette.pageBg;
+  }, [palette]);
+
+  const screenContent = (() => {
+    if (screen === 'onboarding') {
+      return <OnboardingScreen palette={palette} onStart={() => go('home')}/>;
+    }
+    if (screen === 'add') {
+      return <AddScreen palette={palette} onCancel={() => go('home')} onSave={onAddSave}/>;
+    }
+    if (screen === 'detail' || screen === 'launch') {
+      return <TaskDetail palette={palette} task={screen === 'launch' ? notifTask : activeTask}
+        onBack={() => go('home')} onComplete={onComplete}
+        launchMode={screen === 'launch'}/>;
+    }
+    if (screen === 'celebration') {
+      return <Celebration palette={palette} task={activeTask}
+        style={tweaks.celebration} onContinue={() => go('home')}/>;
+    }
+    if (screen === 'templates') {
+      return <TemplatesScreen palette={palette} TEMPLATES={TEMPLATES}
+        onBack={() => go('home')} onUpgrade={() => go('upgrade')}/>;
+    }
+    if (screen === 'upgrade') {
+      return <UpgradeScreen palette={palette} onClose={() => go('home')}/>;
+    }
+    // tabbed screens
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: palette.bg }}>
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {tab === 'home' && (
+            <HomeScreen palette={palette} tasks={tasks}
+              onOpenTask={onOpenTask} onAdd={() => go('add')}
+              peacefulDays={peacefulDays} setTab={setTab}/>
+          )}
+          {tab === 'vault' && (
+            <VaultScreen palette={palette} tasks={tasks}
+              onOpenTask={onOpenTask} onAdd={() => go('add')}/>
+          )}
+          {tab === 'stats' && (
+            <StatsScreen palette={palette} tasks={tasks}
+              completedCount={completedCount} peacefulDays={peacefulDays}/>
+          )}
+          {tab === 'me' && <AccountScreen palette={palette} onTemplates={() => go('templates')} onUpgrade={() => go('upgrade')} onReset={resetSeed}/>}
+        </div>
+        <BottomNav tab={tab} setTab={setTab} palette={palette}/>
+      </div>
+    );
+  })();
+
+  // Notification overlay — when triggered, the phone's home screen dims behind
+  const showNotif = notifVariant !== null;
+
+  return (
+    <div style={{
+      minHeight: '100vh', width: '100%',
+      background: palette.pageBg,
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      padding: '40px 16px 80px', gap: 40,
+      fontFamily: 'Inter, sans-serif',
+    }}>
+      {/* Hero wordmark */}
+      <header style={{ textAlign: 'center', maxWidth: 520 }}>
+        <div style={{
+          fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: 3,
+          color: palette.muted, marginBottom: 12,
+        }}>PROTOTYPE · v1 · ANDROID</div>
+        <h1 style={{
+          fontFamily: '"Instrument Serif", serif', fontSize: 56, fontWeight: 400,
+          margin: 0, color: palette.ink, letterSpacing: -1.5, lineHeight: 1,
+        }}>LifeLoop</h1>
+        <p style={{
+          marginTop: 14, fontSize: 15, color: palette.inkSoft, lineHeight: 1.5,
+          fontFamily: 'Inter, sans-serif',
+        }}>The set-and-forget maintenance manager. For the quiet, cyclical tasks that keep a life running — and only those.</p>
+
+        {/* Demo cue */}
+        <div style={{
+          marginTop: 20, display: 'inline-flex', gap: 0, borderRadius: 100,
+          border: `1px solid ${palette.hair}`, background: palette.bg, overflow: 'hidden',
+          flexWrap: 'wrap', justifyContent: 'center',
+        }}>
+          {[
+            ['onboarding','Onboarding'],
+            ['home','Home'],
+            ['add','Add'],
+            ['detail','Detail'],
+            ['launch','Launch day'],
+            ['celebration','Completion'],
+            ['templates','Templates'],
+            ['upgrade','Upgrade'],
+          ].map(([k, label]) => (
+            <button key={k} onClick={() => {
+              if (k === 'detail') setActiveTaskId('t1');
+              if (k === 'launch') setActiveTaskId('t1');
+              go(k);
+            }} style={{
+              padding: '8px 14px', background: screen === k ? palette.ink : 'transparent',
+              color: screen === k ? palette.bg : palette.ink,
+              border: 'none', cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500,
+            }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ marginTop: 10, display: 'flex', gap: 6, justifyContent: 'center' }}>
+          <button onClick={() => { setNotifTaskId('t3'); setNotifVariant('prenudge'); }} style={notifBtnStyle(palette)}>↳ Pre-nudge</button>
+          <button onClick={() => { setNotifTaskId('t1'); setNotifVariant('launch'); }} style={notifBtnStyle(palette)}>↳ Launch-day notif</button>
+        </div>
+      </header>
+
+      {/* Phone */}
+      <div style={{ position: 'relative' }}>
+        <Phone palette={palette} label={labelForScreen(screen, tab)}>
+          <div style={{ height: '100%', position: 'relative' }}>
+            {screenContent}
+            {showNotif && (
+              <NotificationOverlay palette={palette} task={notifTask} variant={notifVariant}
+                onDismiss={() => setNotifVariant(null)}
+                onOpen={() => { setActiveTaskId(notifTaskId); setNotifVariant(null); go(notifVariant === 'launch' ? 'launch' : 'detail'); }}/>
+            )}
+          </div>
+        </Phone>
+      </div>
+
+      {/* Tweaks panel */}
+      {tweaksOpen && (
+        <div style={{
+          position: 'fixed', bottom: 20, right: 20, width: 280,
+          background: palette.bg, color: palette.ink,
+          borderRadius: 16, padding: 18,
+          border: `1px solid ${palette.hair}`,
+          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.25)',
+          fontFamily: 'Inter, sans-serif', zIndex: 1000,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: 2, color: palette.muted }}>TWEAKS</div>
+            <button onClick={() => setTweaksOpen(false)} style={{ background: 'none', border: 'none', color: palette.ink, cursor: 'pointer' }}>{window.Icon.close(16)}</button>
+          </div>
+          <TweakRow label="Palette" palette={palette}>
+            {Object.keys(PALETTES).map(p => (
+              <button key={p} onClick={() => updateTweak('palette', p)} style={tweakChipStyle(palette, tweaks.palette === p)}>
+                {PALETTES[p].name}
+              </button>
+            ))}
+          </TweakRow>
+          <TweakRow label="Completion style" palette={palette}>
+            {['ring','quiet','confetti'].map(s => (
+              <button key={s} onClick={() => updateTweak('celebration', s)} style={tweakChipStyle(palette, tweaks.celebration === s)}>
+                {s}
+              </button>
+            ))}
+          </TweakRow>
+          <TweakRow label="Density" palette={palette}>
+            {['airy','comfortable','compact'].map(d => (
+              <button key={d} onClick={() => updateTweak('density', d)} style={tweakChipStyle(palette, tweaks.density === d)}>
+                {d}
+              </button>
+            ))}
+          </TweakRow>
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${palette.hairSoft}` }}>
+            <button onClick={resetSeed} style={{
+              width: '100%', padding: '8px', borderRadius: 100,
+              background: 'transparent', border: `1px solid ${palette.hair}`,
+              color: palette.ink, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12,
+            }}>Reset demo data</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccountScreen({ palette, onTemplates, onUpgrade, onReset }) {
+  const Row = ({ label, value, onClick, premium }) => (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', width: '100%', padding: '14px 20px',
+      background: 'none', border: 'none', borderBottom: `1px solid ${palette.hairSoft}`,
+      cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif',
+    }}>
+      <span style={{ flex: 1, fontSize: 14, color: palette.ink }}>{label}</span>
+      {premium && (
+        <span style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          marginRight: 10, color: palette.accent,
+          fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: 1,
+        }}>{window.Icon.lock(10)} PREMIUM</span>
+      )}
+      <span style={{ fontSize: 13, color: palette.muted, marginRight: 6 }}>{value}</span>
+      {window.Icon.chevR(16)}
+    </button>
+  );
+  return (
+    <div style={{ height: '100%', background: palette.bg, overflowY: 'auto' }}>
+      <div style={{ padding: '20px 20px 8px' }}>
+        <div style={{
+          fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: 2,
+          color: palette.muted, marginBottom: 4,
+        }}>ACCOUNT</div>
+        <h1 style={{
+          fontFamily: '"Instrument Serif", serif', fontWeight: 400, fontSize: 32,
+          margin: 0, color: palette.ink, letterSpacing: -0.5,
+        }}>Settings & things.</h1>
+      </div>
+      <div style={{
+        margin: '18px 20px', padding: '18px', borderRadius: 14,
+        background: palette.ink, color: palette.bg,
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+        <div style={{ color: 'oklch(0.75 0.10 70)' }}>{window.Icon.sparkle(20)}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500 }}>Unlock LifeLoop Premium</div>
+          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, opacity: 0.7, marginTop: 2 }}>Unlimited attachments · template library · collaborators</div>
+        </div>
+        <button onClick={onUpgrade} style={{
+          padding: '8px 14px', borderRadius: 100, background: palette.bg, color: palette.ink,
+          border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500,
+        }}>View</button>
+      </div>
+      <Row label="Template library" value="6 packs" onClick={onTemplates} premium/>
+      <Row label="Reminder tones" value="Calm" onClick={() => {}} premium/>
+      <Row label="Collaborators" value="0 / 1" onClick={() => {}} premium/>
+      <Row label="Categories" value="4" onClick={() => {}}/>
+      <Row label="Notifications" value="On" onClick={() => {}}/>
+      <Row label="About LifeLoop" value="v1.0" onClick={() => {}}/>
+      <div style={{ padding: '20px' }}>
+        <button onClick={onReset} style={{
+          padding: '10px 16px', borderRadius: 100,
+          background: 'transparent', border: `1px solid ${palette.hair}`,
+          color: palette.inkSoft, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12,
+        }}>Reset demo & re-onboard</button>
+      </div>
+    </div>
+  );
+}
+
+function TweakRow({ label, children, palette }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: 1.5,
+        color: palette.muted, marginBottom: 6,
+      }}>{label.toUpperCase()}</div>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{children}</div>
+    </div>
+  );
+}
+
+const tweakChipStyle = (palette, active) => ({
+  padding: '5px 10px', borderRadius: 100,
+  background: active ? palette.ink : 'transparent',
+  color: active ? palette.bg : palette.ink,
+  border: `1px solid ${active ? palette.ink : palette.hair}`,
+  fontFamily: 'Inter, sans-serif', fontSize: 11, cursor: 'pointer',
+  textTransform: 'capitalize',
+});
+
+const notifBtnStyle = (palette) => ({
+  padding: '6px 12px', borderRadius: 100,
+  background: 'transparent', border: `1px dashed ${palette.hair}`,
+  color: palette.inkSoft, cursor: 'pointer',
+  fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: 0.5,
+});
+
+function labelForScreen(screen, tab) {
+  if (screen === 'onboarding') return 'ONBOARDING';
+  if (screen === 'add') return 'ADD · NEW LOOP';
+  if (screen === 'detail') return 'TASK · DETAIL';
+  if (screen === 'launch') return 'LAUNCH DAY';
+  if (screen === 'celebration') return 'COMPLETION · RESET';
+  if (screen === 'templates') return 'TEMPLATE LIBRARY';
+  if (screen === 'upgrade') return 'UPGRADE';
+  return tab.toUpperCase();
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+</body>
+</html>
