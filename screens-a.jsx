@@ -304,7 +304,10 @@ function VaultScreen({ palette, tasks, onOpenTask, onAdd }) {
   const [filter, setFilter] = React.useState('all');
 
   const byCat = {};
-  Object.keys(CATEGORIES).forEach(k => { byCat[k] = tasks.filter(t => t.category === k); });
+  Object.keys(CATEGORIES).forEach(k => { byCat[k] = []; });
+  tasks.forEach(t => {
+    if (t.category in byCat) byCat[t.category].push(t);
+  });
 
   const filtered = filter === 'all' ? tasks : tasks.filter(t => t.category === filter);
   const grouped = filter === 'all' ? byCat : { [filter]: filtered };
