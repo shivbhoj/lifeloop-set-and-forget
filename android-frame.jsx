@@ -92,34 +92,6 @@ function AndroidAppBar({ title = 'Title', large = false }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// List item (Material 3)
-// ─────────────────────────────────────────────────────────────
-function AndroidListItem({ headline, supporting, leading }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 16,
-      padding: '12px 16px', minHeight: 56, boxSizing: 'border-box',
-      fontFamily: 'Roboto, system-ui, sans-serif',
-    }}>
-      {leading && (
-        <div style={{
-          width: 40, height: 40, borderRadius: '50%',
-          background: MD_C.primary, color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18, fontWeight: 500, flexShrink: 0,
-        }}>{leading}</div>
-      )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 16, color: MD_C.onSurface, lineHeight: '24px' }}>{headline}</div>
-        {supporting && (
-          <div style={{ fontSize: 14, color: MD_C.onSurfaceVar, lineHeight: '20px' }}>{supporting}</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // Gesture nav bar (pill)
 // ─────────────────────────────────────────────────────────────
 function AndroidNavBar({ dark = false }) {
@@ -210,5 +182,5 @@ function AndroidKeyboard() {
 }
 
 Object.assign(window, {
-  AndroidDevice, AndroidStatusBar, AndroidAppBar, AndroidListItem, AndroidNavBar, AndroidKeyboard,
+  AndroidDevice, AndroidStatusBar, AndroidAppBar, AndroidNavBar, AndroidKeyboard,
 });
