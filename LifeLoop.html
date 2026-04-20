@@ -83,6 +83,8 @@ const PALETTES = {
 
 const { Phone, HomeScreen, VaultScreen, OnboardingScreen, BottomNav, TaskDetail, AddScreen, Celebration, NotificationOverlay, StatsScreen, TemplatesScreen, UpgradeScreen, SEED_TASKS, TEMPLATES, TODAY, cycleDays, addDays } = window;
 
+const TRUSTED_ORIGIN = 'https://claude.ai';
+
 function App() {
   const [tweaks, setTweaks] = React.useState(TWEAKS);
   const palette = PALETTES[tweaks.palette] || PALETTES.bone;
@@ -173,19 +175,20 @@ function App() {
   // Tweaks mode
   React.useEffect(() => {
     const onMsg = (e) => {
+      if (e.origin !== TRUSTED_ORIGIN) return;
       if (!e.data || typeof e.data !== 'object') return;
       if (e.data.type === '__activate_edit_mode') setTweaksOpen(true);
       if (e.data.type === '__deactivate_edit_mode') setTweaksOpen(false);
     };
     window.addEventListener('message', onMsg);
-    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    window.parent.postMessage({ type: '__edit_mode_available' }, TRUSTED_ORIGIN);
     return () => window.removeEventListener('message', onMsg);
   }, []);
   const [tweaksOpen, setTweaksOpen] = React.useState(false);
   const updateTweak = (k, v) => {
     const next = { ...tweaks, [k]: v };
     setTweaks(next);
-    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, TRUSTED_ORIGIN);
   };
 
   // Page background reflects palette
