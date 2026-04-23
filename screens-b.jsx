@@ -5,10 +5,11 @@ const { Phone, Ring, CatDot, Icon, CATEGORIES, TODAY, fmtDate, fmtLong, cycleDay
 // ─────────────────────────────────────────────────────────────
 // TASK DETAIL
 // ─────────────────────────────────────────────────────────────
-function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
-  const totalCycle = cycleDays(task.cycleMonths);
+const getTaskDetailState = (task, palette, cycleDaysFn) => {
+  const totalCycle = cycleDaysFn(task.cycleMonths);
   const daysInto = totalCycle - task.daysUntil;
-  const progress = Math.min(1, Math.max(0, daysInto / totalCycle));
+  const progressRaw = totalCycle === 0 ? (task.daysUntil <= 0 ? 1 : 0) : (daysInto / totalCycle);
+  const progress = Math.min(1, Math.max(0, progressRaw));
   const due = task.daysUntil;
   const isOverdue = due < 0;
   const isLaunchDay = due <= 0;
@@ -19,6 +20,12 @@ function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
   } else if (isLaunchDay) {
     ringColor = palette.accent;
   }
+
+  return { totalCycle, daysInto, progress, due, isOverdue, isLaunchDay, ringColor };
+};
+
+function TaskDetail({ palette, task, onBack, onComplete, launchMode = false }) {
+  const { totalCycle, progress, due, isOverdue, isLaunchDay, ringColor } = getTaskDetailState(task, palette, cycleDays);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: palette.bg }}>
@@ -883,4 +890,12 @@ function PlanCard({ selected, onClick, palette, title, price, sub, badge }) {
   );
 }
 
-Object.assign(window, { TaskDetail, AddScreen, Celebration, NotificationOverlay, StatsScreen, TemplatesScreen, UpgradeScreen });
+if (typeof window !== 'undefined') {
+  Object.assign(window, { TaskDetail, AddScreen, Celebration, NotificationOverlay, StatsScreen, TemplatesScreen, UpgradeScreen, getTaskDetailState });
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    TaskDetail, AddScreen, Celebration, NotificationOverlay, StatsScreen, TemplatesScreen, UpgradeScreen, getTaskDetailState
+  };
+}
