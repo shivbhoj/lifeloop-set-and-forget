@@ -116,13 +116,13 @@ const TEMPLATES = [
 if (typeof window !== 'undefined') {
   Object.assign(window, {
     CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-    daysBetween, addDays, fmtDate, fmtLong, cycleDays, formatLastDoneDays,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays, mkTask, formatLastDoneDays,
   });
 }
 
 if (typeof module !== 'undefined') {
   module.exports = {
     CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-    daysBetween, addDays, fmtDate, fmtLong, cycleDays, formatLastDoneDays,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays, mkTask, formatLastDoneDays,
   };
 }

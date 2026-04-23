@@ -37,10 +37,11 @@ function BottomNav({ tab, setTab, palette }) {
 // ─────────────────────────────────────────────────────────────
 // Task row — used on Home and in Vault
 // ─────────────────────────────────────────────────────────────
-function TaskRow({ task, onClick, palette, showCategory = true, dense = false }) {
-  const totalCycle = cycleDays(task.cycleMonths);
+
+function getTaskRowDisplayInfo(task, palette, categories, cycleDaysFn, fmtDateFn) {
+  const totalCycle = cycleDaysFn(task.cycleMonths);
   const daysInto = totalCycle - task.daysUntil;
-  const progress = Math.min(1, Math.max(0, daysInto / totalCycle));
+  const progress = totalCycle === 0 ? 0 : Math.min(1, Math.max(0, daysInto / totalCycle));
   const due = task.daysUntil;
   const isOverdue = due < 0;
   const isSoon = due >= 0 && due <= 14;
@@ -50,9 +51,15 @@ function TaskRow({ task, onClick, palette, showCategory = true, dense = false })
   else if (due === 0) dueLabel = 'Due today';
   else if (due === 1) dueLabel = 'Tomorrow';
   else if (due <= 14) dueLabel = `In ${due} days`;
-  else dueLabel = fmtDate(task.nextDue);
+  else dueLabel = fmtDateFn(task.nextDue);
 
-  const ringColor = isOverdue ? 'oklch(0.55 0.12 30)' : (isSoon ? CATEGORIES[task.category].dot : palette.inkSoft);
+  const ringColor = isOverdue ? 'oklch(0.55 0.12 30)' : (isSoon ? categories[task.category].dot : palette.inkSoft);
+
+  return { totalCycle, daysInto, progress, due, isOverdue, isSoon, dueLabel, ringColor };
+}
+
+function TaskRow({ task, onClick, palette, showCategory = true, dense = false }) {
+  const { progress, isOverdue, dueLabel, ringColor } = getTaskRowDisplayInfo(task, palette, CATEGORIES, cycleDays, fmtDate);
 
   return (
     <button onClick={onClick} style={{
@@ -174,7 +181,7 @@ function OnboardingScreen({ palette, onStart }) {
 function HomeScreen({ palette, tasks, onOpenTask, onAdd, peacefulDays, setTab }) {
   const soon = tasks.filter(t => t.daysUntil <= 14).sort((a, b) => a.daysUntil - b.daysUntil);
   const later = tasks.filter(t => t.daysUntil > 14 && t.daysUntil <= 60).sort((a, b) => a.daysUntil - b.daysUntil);
-  const resting = tasks.filter(t => t.daysUntil > 60);
+  const resting = tasks.filter(t => t.daysUntil > 60).sort((a, b) => a.daysUntil - b.daysUntil);
 
   const today = soon.filter(t => t.daysUntil <= 0);
   const thisWeek = soon.filter(t => t.daysUntil > 0);
@@ -248,8 +255,8 @@ function HomeScreen({ palette, tasks, onOpenTask, onAdd, peacefulDays, setTab })
             fontFamily: 'JetBrains Mono, monospace', color: palette.muted, letterSpacing: 0.3, lineHeight: 1.7,
           }}>
             {resting.length} tasks tucked away. Next to surface: <span style={{ color: palette.ink }}>
-              {resting.sort((a,b) => a.daysUntil - b.daysUntil)[0]?.name}
-            </span> on {fmtDate(resting.sort((a,b) => a.daysUntil - b.daysUntil)[0]?.nextDue)}.
+              {resting[0]?.name}
+            </span> on {fmtDate(resting[0]?.nextDue)}.
           </div>
         </Section>
       </div>
@@ -303,14 +310,24 @@ function Empty({ palette, text }) {
 function VaultScreen({ palette, tasks, onOpenTask, onAdd }) {
   const [filter, setFilter] = React.useState('all');
 
-  const byCat = {};
-  Object.keys(CATEGORIES).forEach(k => { byCat[k] = []; });
-  tasks.forEach(t => {
-    if (t.category in byCat) byCat[t.category].push(t);
-  });
+  const grouped = React.useMemo(() => {
+    const byCat = {};
+    if (filter !== 'all') {
+      byCat[filter] = [];
+      for (let i = 0; i < tasks.length; i++) {
+        const t = tasks[i];
+        if (t.category === filter) byCat[filter].push(t);
+      }
+      return byCat;
+    }
 
-  const filtered = filter === 'all' ? tasks : tasks.filter(t => t.category === filter);
-  const grouped = filter === 'all' ? byCat : { [filter]: filtered };
+    Object.keys(CATEGORIES).forEach(k => { byCat[k] = []; });
+    for (let i = 0; i < tasks.length; i++) {
+      const t = tasks[i];
+      if (t.category in byCat) byCat[t.category].push(t);
+    }
+    return byCat;
+  }, [tasks, filter]);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: palette.bg }}>
@@ -392,4 +409,8 @@ function Chip({ active, onClick, children, palette }) {
   );
 }
 
-Object.assign(window, { HomeScreen, VaultScreen, OnboardingScreen, BottomNav, TaskRow });
+Object.assign(window, { HomeScreen, VaultScreen, OnboardingScreen, BottomNav, TaskRow, getTaskRowDisplayInfo });
+
+if (typeof module !== 'undefined') {
+  module.exports = { getTaskRowDisplayInfo };
+}
