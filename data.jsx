@@ -108,13 +108,13 @@ const TEMPLATES = [
 if (typeof window !== 'undefined') {
   Object.assign(window, {
     CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-    daysBetween, addDays, fmtDate, fmtLong, cycleDays,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays, mkTask,
   });
 }
 
 if (typeof module !== 'undefined') {
   module.exports = {
     CATEGORIES, TODAY, SEED_TASKS, TEMPLATES,
-    daysBetween, addDays, fmtDate, fmtLong, cycleDays,
+    daysBetween, addDays, fmtDate, fmtLong, cycleDays, mkTask,
   };
 }
