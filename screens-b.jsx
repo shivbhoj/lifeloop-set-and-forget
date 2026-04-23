@@ -212,21 +212,31 @@ function CycleTimeline({ task, palette }) {
 // ─────────────────────────────────────────────────────────────
 // ADD NEW TASK — multi-field form
 // ─────────────────────────────────────────────────────────────
+
+const CYCLES = [
+  { m: 1, label: '1 mo' },
+  { m: 3, label: '3 mo' },
+  { m: 6, label: '6 mo' },
+  { m: 12, label: '1 yr' },
+  { m: 24, label: '2 yr' },
+  { m: 60, label: '5 yr' },
+];
+
+const LAST_DONE_OPTIONS = [0, 7, 30, 90, 180, 365];
+
+function formatLastDone(d) {
+  if (d === 0) return 'Today';
+  if (d < 30) return `${d}d ago`;
+  if (d < 365) return `${Math.round(d/30)}mo`;
+  return `${Math.round(d/365)}yr ago`;
+}
+
 function AddScreen({ palette, onCancel, onSave }) {
   const [name, setName] = React.useState('');
   const [category, setCategory] = React.useState('home');
   const [cycle, setCycle] = React.useState(3);
   const [lastDone, setLastDone] = React.useState(30);
   const [note, setNote] = React.useState('');
-
-  const CYCLES = [
-    { m: 1, label: '1 mo' },
-    { m: 3, label: '3 mo' },
-    { m: 6, label: '6 mo' },
-    { m: 12, label: '1 yr' },
-    { m: 24, label: '2 yr' },
-    { m: 60, label: '5 yr' },
-  ];
 
   const nextDue = addDays(addDays(TODAY, -lastDone), cycleDays(cycle));
 
@@ -301,14 +311,14 @@ function AddScreen({ palette, onCancel, onSave }) {
         {/* Last done */}
         <Field label="Last done" palette={palette}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {[0, 7, 30, 90, 180, 365].map(d => (
+            {LAST_DONE_OPTIONS.map(d => (
               <button key={d} onClick={() => setLastDone(d)} style={{
                 padding: '10px 14px', borderRadius: 10,
                 background: lastDone === d ? palette.ink : 'transparent',
                 color: lastDone === d ? palette.bg : palette.ink,
                 border: `1px solid ${lastDone === d ? palette.ink : palette.hair}`,
                 fontFamily: 'JetBrains Mono, monospace', fontSize: 12, cursor: 'pointer',
-              }}>{d === 0 ? 'Today' : d < 30 ? `${d}d ago` : d < 365 ? `${Math.round(d/30)}mo` : `${Math.round(d/365)}yr ago`}</button>
+              }}>{formatLastDone(d)}</button>
             ))}
           </div>
         </Field>
